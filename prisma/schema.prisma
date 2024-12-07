@@ -1,0 +1,143 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               Int                   @id @default(autoincrement())
+  name             String
+  email            String                @unique
+  phone            String
+  password         String
+  role             Role
+  store            Store?                @relation(fields: [storeId], references: [id])
+  storeId          Int?
+  sales            Sale[]
+  approaches       Approach[]
+  weeklySummaries  WeeklySummary[]
+  profilePicture   String?
+  loyaltyHistories LoyaltyCardHistory[]  // Relaciona com LoyaltyCardHistory
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+}
+
+model LoyaltyCard {
+  id               Int                   @id @default(autoincrement())
+  customer         Customer              @relation("CustomerLoyaltyCard", fields: [customerId], references: [id])
+  customerId       Int                   @unique
+  points           Int                   @default(0)
+  stamps           Int                   @default(0)
+  histories        LoyaltyCardHistory[]  
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+}
+
+model LoyaltyCardHistory {
+  id             Int           @id @default(autoincrement())
+  loyaltyCardId  Int
+  stampsAdded    Int
+  dateAdded      DateTime       @default(now())
+  userId         Int
+  user           User           @relation(fields: [userId], references: [id])
+  loyaltyCard    LoyaltyCard    @relation(fields: [loyaltyCardId], references: [id])
+}
+
+model Customer {
+  id           Int              @id @default(autoincrement())
+  name         String
+  cpf          String           @unique
+  birthDate    DateTime
+  phoneNumber  String
+  email        String?          @unique
+  loyaltyCard  LoyaltyCard?     @relation("CustomerLoyaltyCard")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model Store {
+  id               Int              @id @default(autoincrement())
+  name             String
+  location         String?
+  users            User[]
+  sales            Sale[]
+  approaches       Approach[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model Approach {
+  id               Int              @id @default(autoincrement())
+  date             DateTime
+  user             User             @relation(fields: [userId], references: [id])
+  userId           Int
+  store            Store            @relation(fields: [storeId], references: [id])
+  storeId          Int
+  salesCount       Int              
+  piecesPerSale    Int             
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model Sale {
+  id               Int              @id @default(autoincrement())
+  date             DateTime
+  user             User             @relation(fields: [userId], references: [id])
+  userId           Int
+  store            Store            @relation(fields: [storeId], references: [id])
+  storeId          Int
+  totalValue       Float            
+  piecesSold       Int              
+  conversionRate   Float?           
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model WeeklySummary {
+  id                 Int       @id @default(autoincrement())
+  weekStartDate      DateTime
+  weekEndDate        DateTime
+  user               User?     @relation(fields: [userId], references: [id])
+  userId             Int?
+  totalSales         Float
+  averageTicket      Float
+  conversionRate     Float
+  highestSaleValue   Float
+  totalPiecesSold    Int
+  piecesPerSale      Float
+  totalApproaches    Int
+  totalCommission    Float?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  @@unique([userId, weekStartDate])
+}
+
+model MonthlyMetrics {
+  id             Int      @id @default(autoincrement())
+  month          Int      
+  year           Int
+  dinheiro       Float    @default(0)
+  cartaoTef      Float    @default(0)
+  pitCard        Float    @default(0)
+  brasilCard     Float    @default(0)
+  linkCartao     Float    @default(0)
+  pix            Float    @default(0)
+  cheque         Float    @default(0)
+  crediario      Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([month, year]) 
+}
+
+enum Role {
+  ADMINISTRADOR
+  GERENTE
+  ANALISTA
+  COLABORADOR
+  VENDEDOR
+}
+
